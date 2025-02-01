@@ -18,6 +18,8 @@ while read -r line || [[ -n "$line" ]]; do
   export "$line"
 done < .env
 
+export BUILD_DATE=$(date +%Y-%m-%d)
+
 cat fly-template.toml | envsubst > fly.toml
 
 CAT="cat"
