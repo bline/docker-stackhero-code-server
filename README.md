@@ -60,17 +60,20 @@ flyctl deploy      # Deploy to Fly.io
 
 ### .env File Variables
 
-| Variable               | Description                                                |
-|------------------------|------------------------------------------------------------|
-| `PROJECT_NAME`         | The name of your project on fly.io (e.g. my-code-server)   |
-| `CODE_SERVER_VERSION`  | Version of code-server (default: latest). Example: 4.96.4. |
-| `GIT_USER`/`GIT_EMAIL` | Git global configuration (required for commits).           |
-| `TZ`                   | Timezone (e.g., America/New_York).                         |
-| `DEFAULT_WORKSPACE`    | Persistent storage directory (default: /workspace).        |
-| `IDLE_TIMEOUT`         | Seconds before VM sleeps (max 900).                        |
-| `AUTO_STOP_MACHINE`    | VM behavior on idle: stop, suspend, or off.                |
-| `VM_SIZE`              | The VM size on fly.io (e.g. shared-cpu-2x)                 |
-| `VM_MEMORY`            | The VM memory setting (e.g. 2gb)                           |
+| Variable                       | Description                                                |
+|--------------------------------|-------------------------------------------------------------------------------------------------------|
+| `PROJECT_NAME`                 | The name of your project on fly.io (e.g. my-code-server)                                              |
+| `CODE_SERVER_VERSION`          | Version of code-server (default: latest). Example: 4.96.4.                                            |
+| `GIT_USER`/`GIT_EMAIL`         | Git global configuration (required for commits).                                                      |
+| `TZ`                           | Timezone (e.g., America/New_York).                                                                    |
+| `DEFAULT_WORKSPACE`            | Persistent storage directory (default: /workspace).                                                   |
+| `IDLE_TIMEOUT`                 | Seconds before VM sleeps (max 900).                                                                   |
+| `AUTO_STOP_MACHINE`            | VM behavior on idle: stop, suspend, or off.                                                           |
+| `VM_SIZE`                      | The VM size on fly.io (e.g. shared-cpu-2x)                                                            |
+| `VM_MEMORY`                    | The VM memory setting (e.g. 2gb)                                                                      |
+| `INITIAL_DISK_SIZE`            | set the initial volume size for the volume `DEFAULT_WORKSPACE` is mounted on.                         |
+| `INSTALL_NODE_FROM_NODESOURCE` | If set to `true` will install nodejs from [Node Source](https://github.com/nodesource/distributions). |
+| `NODE_MAJOR`                   | Sets the version of node to install if installing from Node Source.                                   |
 
 ### Fly.io Secrets
 
