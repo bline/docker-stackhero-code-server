@@ -14,7 +14,7 @@ FLY_APP_NAME=${FLY_APP_NAME:-unknown}
 FLY_REGION=${FLY_REGION:-unknown}
 
 # Extract machine type and memory from fly.toml
-FLY_MACHINE_TYPE=$(grep 'size' /fly.toml | awk -F '"' '{print $2}')
+FLY_MACHINE_TYPE=$(grep '^size' /fly.toml | awk -F '"' '{print $2}')
 FLY_MEMORY=$(grep 'memory' /fly.toml | awk -F '"' '{print $2}')
 
 # Enable Git branch display in prompt
@@ -49,6 +49,10 @@ alias gb='git branch'
 alias gd='git diff'
 alias gco='git checkout'
 alias gl='git log --oneline --graph --decorate'
+
+# For flyctl
+export FLYCTL_INSTALL="${DEFAULT_WORKSPACE}/.fly"
+export PATH="$FLYCTL_INSTALL/bin:$PATH"
 
 # Jump to workspace by default
 cd "${DEFAULT_WORKSPACE}"

@@ -7,10 +7,10 @@ dockerfile = "Dockerfile"
 [build.args]
 BUILD_DATE = "${BUILD_DATE}"
 CODE_RELEASE = "${CODE_SERVER_VERSION}"
-GIT_USER = "${GIT_USER}"
-GIT_EMAIL = "${GIT_EMAIL}"
 DEFAULT_WORKSPACE = "${DEFAULT_WORKSPACE}"
 SERVER_PORT = "${SERVER_PORT}"
+INSTALL_NODE_FROM_NODESOURCE = "${INSTALL_NODE_FROM_NODESOURCE}"
+NODE_MAJOR = "${NODE_MAJOR}"
 
 # Runtime env, only available in entrypoint and beyound
 [env]
@@ -21,6 +21,8 @@ XDG_CONFIG_HOME = "${DEFAULT_WORKSPACE}/.config"
 XDG_CACHE_HOME = "${DEFAULT_WORKSPACE}/.cache"
 PORT = "${SERVER_PORT}"
 HOME = "${DEFAULT_WORKSPACE}"
+GIT_USER = "${GIT_USER}"
+GIT_EMAIL = "${GIT_EMAIL}"
 
 [http_service]
 internal_port = $SERVER_PORT # do not quote
@@ -34,6 +36,7 @@ idle_timeout = $IDLE_TIMEOUT # do not quote, max is 900
 [[mounts]]
 source = "code_workspace"
 destination = "${DEFAULT_WORKSPACE}"
+initial_size = "${INITIAL_DISK_SIZE}"
 
 [[vm]]
 size = "shared-cpu-2x"

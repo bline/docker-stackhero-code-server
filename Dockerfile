@@ -1,27 +1,41 @@
-FROM ghcr.io/linuxserver/baseimage-ubuntu:noble
+FROM debian:bookworm-slim
 
-# Set version label
+# Optional: Upgrade Node.js if desired
+# Build-time argument to control installation source for Node.js
+ARG INSTALL_NODE_FROM_NODESOURCE=false
+ARG NODE_MAJOR=22
+
 ARG BUILD_DATE
 ARG CODE_RELEASE
 ARG DEBIAN_FRONTEND="noninteractive"
 ARG DEFAULT_WORKSPACE=/workspace
 ARG SERVER_PORT=8080
-ARG GIT_USER
-ARG GIT_EMAIL
-
 
 # Set environment variables
+ENV DEBIAN_FRONTEND=${DEBIAN_FRONTEND}
 ENV VERSION="v${CODE_RELEASE:-latest}"
 ENV DEFAULT_WORKSPACE=$DEFAULT_WORKSPACE
 ENV SERVER_PORT=$SERVER_PORT
 ENV SSH_DIR=${DEFAULT_WORKSPACE}/.ssh
-ENV GIT_USER=$GIT_USER
-ENV GIT_EMAIL=$GIT_EMAIL
+ENV NODE_MAJOR=$NODE_MAJOR
+ENV INSTALL_NODE_FROM_NODESOURCE=$INSTALL_NODE_FROM_NODESOURCE
 
 LABEL build_version="Linuxserver.io version:- ${VERSION} Build-date:- ${BUILD_DATE}"
 LABEL maintainer="sbeck"
 
-
+# Conditionally install Node.js from NodeSource if INSTALL_NODE_FROM_NODESOURCE is true.
+RUN if [ "$INSTALL_NODE_FROM_NODESOURCE" = "true" ]; then \
+      apt-get update && \
+      apt-get install -y curl ca-certificates gnupg && \
+      curl -fsSL https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash - && \
+      apt-get install -y nodejs && \
+      rm -rf /var/lib/apt/lists/*; \
+    else \
+      echo "Installing Node.js from Debian's default repository (Node.js 18)"; \
+      apt-get update && \
+      apt-get install -y nodejs && \
+      rm -rf /var/lib/apt/lists/*; \
+    fi
 
 # Install code-server
 RUN \
@@ -29,6 +43,8 @@ RUN \
   apt-get update && \
   apt-get install -y \
     git \
+    curl \
+    ca-certificates \
     libatomic1 && \
   echo "**** install code-server ****" && \
   if [ -z ${CODE_RELEASE+x} ]; then \
@@ -41,7 +57,7 @@ RUN \
     "https://github.com/coder/code-server/releases/download/v${CODE_RELEASE}/code-server-${CODE_RELEASE}-linux-amd64.tar.gz" && \
   tar xf /tmp/code-server.tar.gz -C \
     /app/code-server --strip-components=1 && \
-  printf "Linuxserver.io version: ${VERSION}\nBuild-date: ${BUILD_DATE}" > /build_version && \
+  printf "blineCodeServer version: ${VERSION}\nBuild-date: ${BUILD_DATE}" > /build_version && \
   echo "**** clean up ****" && \
   apt-get clean && \
   rm -rf \
@@ -49,6 +65,10 @@ RUN \
     /tmp/* \
     /var/lib/apt/lists/* \
     /var/tmp/*
+
+RUN echo "**** install flyctl ****" && \
+  curl -L https://fly.io/install.sh | sh
+
 
 # Copy package list
 COPY packages.list /tmp/packages.list
@@ -60,15 +80,6 @@ RUN echo "**** install extra packages ****" && \
     rm -f /tmp/packages.list && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-
-# Check if GIT_USER and GIT_EMAIL are set
-RUN if [ -z "${GIT_USER}" ] || [ -z "${GIT_EMAIL}" ]; then \
-      echo "WARN: GIT_USER and GIT_EMAIL should be set as arguments (build.args) to configure git." >&2; \
-    else \
-      echo "Configuring Git with user: ${GIT_USER}, email: ${GIT_EMAIL}"; \
-      git config --global user.name "${GIT_USER}" && \
-      git config --global user.email "${GIT_EMAIL}"; \
-    fi
 
 # Copy the entrypoint script
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh

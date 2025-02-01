@@ -5,6 +5,7 @@ set -e  # Exit on error
 LIGHT_BLUE="\e[94m"
 BLUE="\e[34m"
 GREEN="\e[32m"
+RED="\e[31m"
 RESET="\e[0m"
 
 # Ensure PORT is set, default to 8080 if not provided
@@ -35,6 +36,21 @@ ensure_dir "XDG Data Home" "${XDG_DATA_HOME}" 755
 ensure_dir "XDG Config Home" "${XDG_CONFIG_HOME}" 755
 ensure_dir "XDG Cache Home" "${XDG_CACHE_HOME}" 755
 ensure_dir "SSH Config" "/etc/ssh/ssh_config.d" 755
+
+if [ -z "${GIT_USER}" ] || [ -z "${GIT_EMAIL}" ]; then
+    echo -e "${RED}  *${RESET} GIT_USER and GIT_EMAIL is not set, skipping..." >&2
+else
+    git config --global user.name >/dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        echo -e "${GREEN}  *${RESET} Configuring Git with user: ${LIGHT_BLUE}${GIT_USER}${RESET}"
+        git config --global user.name "${GIT_USER}"
+    fi
+    git config --global user.email >/dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        echo -e "${GREEN}  *${RESET} Configuring Git with email: ${LIGHT_BLUE}${GIT_EMAIL}${RESET}"
+        git config --global user.email "${GIT_EMAIL}"
+    fi
+fi
 
 echo -e "${BLUE}==== Creating necessary files ====${RESET}"
 
