@@ -5,7 +5,7 @@ if [ ! -f ".env" ]; then
   exit 1
 fi
 
-while read -r line; do
+while read -r line || [[ -n "$line" ]]; do
   # Skip comments and empty lines
   if [[ $line == \#* || -z "$line" ]]; then
     continue

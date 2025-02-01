@@ -51,6 +51,15 @@ RUN \
     /var/lib/apt/lists/* \
     /var/tmp/*
 
+# Create .ssh directory and generate SSH keys
+RUN mkdir -p "${SSH_DIR}" && \
+    chmod 700 "${SSH_DIR}" && \
+    ssh-keygen -t rsa -b 4096 -f "${SSH_DIR}/id_rsa" -N "" && \
+    chmod 600 "${SSH_DIR}/id_rsa" "${SSH_DIR}/id_rsa.pub"
+
+# Configure SSH to use the custom directory
+RUN echo "IdentityFile ${SSH_DIR}/id_rsa" > /etc/ssh/ssh_config.d/custom.conf
+
 # Check if GIT_USER and GIT_EMAIL are set
 RUN if [ -z "${GIT_USER}" ] || [ -z "${GIT_EMAIL}" ]; then \
       echo "WARN: GIT_USER and GIT_EMAIL should be set as arguments (build.args) to configure git." >&2; \

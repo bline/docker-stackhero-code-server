@@ -1,6 +1,5 @@
-# Ignore all secrets and sensitive credentials
-secrets/
-secrets/*
+# generated file
+fly.toml
 
 # Ignore Docker-related files that shouldn't be versioned
 *.env
@@ -9,10 +8,6 @@ secrets/*
 .env.production
 .env.development
 !.env-example
-
-# Ignore code-server specific configuration files
-config/
-config/*
 
 # Ignore workspace and user-generated files
 workspace/

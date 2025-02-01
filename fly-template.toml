@@ -1,0 +1,40 @@
+app = "${PROJECT_NAME}"
+
+[build]
+dockerfile = "Dockerfile"
+
+# Dockerfile build args
+[build.args]
+BUILD_DATE = "${BUILD_DATE}"
+CODE_RELEASE = "${CODE_SERVER_VERSION}"
+GIT_USER = "${GIT_USER}"
+GIT_EMAIL = "${GIT_EMAIL}"
+DEFAULT_WORKSPACE = "${DEFAULT_WORKSPACE}"
+SERVER_PORT = "${SERVER_PORT}"
+
+# Runtime env, only available in entrypoint and beyound
+[env]
+TZ = "${TZ}"
+DEFAULT_WORKSPACE = "${DEFAULT_WORKSPACE}"
+XDG_DATA_HOME = "${DEFAULT_WORKSPACE}/.local/share"
+XDG_CONFIG_HOME = "${DEFAULT_WORKSPACE}/.config"
+XDG_CACHE_HOME = "${DEFAULT_WORKSPACE}/.cache"
+PORT = "${SERVER_PORT}"
+HOME = "${DEFAULT_WORKSPACE}"
+
+[http_service]
+internal_port = $SERVER_PORT # do not quote
+force_https = true
+auto_stop_machines = "${AUTO_STOP_MACHINE}"
+auto_start_machines = true
+
+[http_service.http_options]
+idle_timeout = $IDLE_TIMEOUT # do not quote, max is 900
+
+[[mounts]]
+source = "code_workspace"
+destination = "${DEFAULT_WORKSPACE}"
+
+[[vm]]
+size = "shared-cpu-2x"
+memory = "2gb"
