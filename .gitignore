@@ -1,0 +1,37 @@
+# Ignore all secrets and sensitive credentials
+secrets/
+secrets/*
+
+# Ignore Docker-related files that shouldn't be versioned
+*.env
+.env
+.env.local
+.env.production
+.env.development
+!.env-example
+
+# Ignore code-server specific configuration files
+config/
+config/*
+
+# Ignore workspace and user-generated files
+workspace/
+workspace/*
+.vscode/
+*.log
+
+# Ignore build artifacts and cache files
+node_modules/
+dist/
+build/
+*.cache
+*.bak
+
+# Ignore system-specific files
+.DS_Store
+Thumbs.db
+
+# Ignore any editor or IDE-specific files
+.idea/
+*.swp
+*.swo
