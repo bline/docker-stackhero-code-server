@@ -25,8 +25,8 @@ This project simplifies deploying [code-server](https://github.com/coder/code-se
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-repo-url.git
-cd your-repo-directory
+git clone https://github.com/bline/fly-code-server.git
+cd fly-code-server
 ```
 
 ### 2. Configure Environment
@@ -60,16 +60,17 @@ flyctl deploy      # Deploy to Fly.io
 
 ### .env File Variables
 
-| Variable | Description |
-| `PROJECT_NAME` | The name of your project on fly.io (e.g. my-code-server) |
-| `CODE_SERVER_VERSION` | Version of code-server (default: latest). Example: 4.96.4. |
-| `GIT_USER`/`GIT_EMAIL` | Git global configuration (required for commits). |
-| `TZ` | Timezone (e.g., America/New_York). |
-| `DEFAULT_WORKSPACE` | Persistent storage directory (default: /workspace). |
-| `IDLE_TIMEOUT` | Seconds before VM sleeps (max 900). |
-| `AUTO_STOP_MACHINE` | VM behavior on idle: stop, suspend, or off. |
-| `VM_SIZE` | The VM size on fly.io (e.g. shared-cpu-2x) |
-| `VM_MEMORY` | The VM memory setting (e.g. 2gb) |
+| Variable               | Description                                                |
+|------------------------|------------------------------------------------------------|
+| `PROJECT_NAME`         | The name of your project on fly.io (e.g. my-code-server)   |
+| `CODE_SERVER_VERSION`  | Version of code-server (default: latest). Example: 4.96.4. |
+| `GIT_USER`/`GIT_EMAIL` | Git global configuration (required for commits).           |
+| `TZ`                   | Timezone (e.g., America/New_York).                         |
+| `DEFAULT_WORKSPACE`    | Persistent storage directory (default: /workspace).        |
+| `IDLE_TIMEOUT`         | Seconds before VM sleeps (max 900).                        |
+| `AUTO_STOP_MACHINE`    | VM behavior on idle: stop, suspend, or off.                |
+| `VM_SIZE`              | The VM size on fly.io (e.g. shared-cpu-2x)                 |
+| `VM_MEMORY`            | The VM memory setting (e.g. 2gb)                           |
 
 ### Fly.io Secrets
 

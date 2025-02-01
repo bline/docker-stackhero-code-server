@@ -19,18 +19,15 @@ ENV SSH_DIR=${DEFAULT_WORKSPACE}/.ssh
 LABEL build_version="Linuxserver.io version:- ${VERSION} Build-date:- ${BUILD_DATE}"
 LABEL maintainer="sbeck"
 
+
+
+# Install code-server
 RUN \
   echo "**** install runtime dependencies ****" && \
   apt-get update && \
   apt-get install -y \
     git \
-    libatomic1 \
-    nano \
-    net-tools \
-    bash-completion \
-    tree \
-    html2text \
-    vim && \
+    libatomic1 && \
   echo "**** install code-server ****" && \
   if [ -z ${CODE_RELEASE+x} ]; then \
     CODE_RELEASE=$(curl -sX GET https://api.github.com/repos/coder/code-server/releases/latest \
@@ -51,14 +48,16 @@ RUN \
     /var/lib/apt/lists/* \
     /var/tmp/*
 
-# Create .ssh directory and generate SSH keys
-RUN mkdir -p "${SSH_DIR}" && \
-    chmod 700 "${SSH_DIR}" && \
-    ssh-keygen -t rsa -b 4096 -f "${SSH_DIR}/id_rsa" -N "" && \
-    chmod 600 "${SSH_DIR}/id_rsa" "${SSH_DIR}/id_rsa.pub"
+# Copy package list
+COPY packages.list /tmp/packages.list
 
-# Configure SSH to use the custom directory
-RUN echo "IdentityFile ${SSH_DIR}/id_rsa" > /etc/ssh/ssh_config.d/custom.conf
+# Install packages from the list
+RUN echo "**** install extra packages ****" && \
+    apt-get update && \
+    xargs -a /tmp/packages.list apt-get install -y --no-install-recommends && \
+    rm -f /tmp/packages.list && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Check if GIT_USER and GIT_EMAIL are set
 RUN if [ -z "${GIT_USER}" ] || [ -z "${GIT_EMAIL}" ]; then \
@@ -75,6 +74,9 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Copy the bashrc file to /tmp
 COPY bashrc /tmp/.bashrc
+
+# Copy the fly.toml for reference in bashrc
+COPY fly.toml /fly.toml
 
 # Move .bashrc to the default workspace at runtime
 RUN mkdir -p "${DEFAULT_WORKSPACE}" && \
