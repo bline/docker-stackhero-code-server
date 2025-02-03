@@ -13,6 +13,12 @@ ARG DEFAULT_WORKSPACE=/workspace
 ARG SERVER_PORT=8080
 ARG USER_NAME=coder
 
+# New optional arguments for testing tools.
+ARG INSTALL_CONTAINER_STRUCTURE_TEST=false
+ARG CONTAINER_STRUCTURE_TEST_VERSION=latest
+ARG INSTALL_HADOLINT=false
+ARG HADOLINT_VERSION=v2.12.0
+
 ###############################################################################
 # Environment Variables
 ###############################################################################
@@ -56,7 +62,7 @@ RUN apt-get update && \
       echo "Installing Node.js from NodeSource (Node.js ${NODE_MAJOR})." && \
       curl -fsSL https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash -; \
     else \
-      echo "Installing Node.js from Debian's default repository (Node.js 18)." ; \
+      echo "Installing Node.js from Debian's default repository (Node.js 18)."; \
     fi && \
     apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -85,6 +91,24 @@ RUN echo "**** Installing flyctl ****" && \
     curl -L https://fly.io/install.sh | sh
 
 ###############################################################################
+# Optionally Install Container-Structure-Test and Hadolint
+###############################################################################
+RUN if [ "$INSTALL_CONTAINER_STRUCTURE_TEST" = "true" ]; then \
+      echo "**** Installing container-structure-test ****" && \
+      curl -Lo /usr/local/bin/container-structure-test https://storage.googleapis.com/container-structure-test/${CONTAINER_STRUCTURE_TEST_VERSION}/container-structure-test && \
+      chmod +x /usr/local/bin/container-structure-test; \
+    else \
+      echo "Skipping container-structure-test installation."; \
+    fi && \
+    if [ "$INSTALL_HADOLINT" = "true" ]; then \
+      echo "**** Installing hadolint ****" && \
+      curl -L https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-Linux-x86_64 -o /usr/local/bin/hadolint && \
+      chmod +x /usr/local/bin/hadolint; \
+    else \
+      echo "Skipping hadolint installation."; \
+    fi
+
+###############################################################################
 # Extra Packages Installation
 ###############################################################################
 # Copy the package list and install extra packages.
@@ -97,7 +121,7 @@ RUN echo "**** Installing extra packages ****" && \
 ###############################################################################
 # Entrypoint & Configuration Files
 ###############################################################################
-# Copy and set executable permissions on the entrypoint script.
+# Copy and set executable permissions on the entrypoint scripts.
 COPY entrypoint.lib.sh /usr/local/bin/entrypoint.lib.sh
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh

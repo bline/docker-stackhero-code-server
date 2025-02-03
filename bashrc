@@ -92,7 +92,4 @@ alias gl='git log --oneline --graph --decorate'
 
 # For flyctl
 export FLYCTL_INSTALL="${HOME}/.fly"
-export PATH="$FLYCTL_INSTALL/bin:$PATH"
-
-# Jump to workspace by default
-cd "${HOME}"
+export PATH="$FLYCTL_INSTALL/bin:$PATH:/usr/local/bin"

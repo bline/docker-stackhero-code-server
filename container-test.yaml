@@ -1,0 +1,49 @@
+schemaVersion: "2.0.0"
+
+fileExistenceTests:
+  - name: "Entrypoint script exists and is executable"
+    path: "/usr/local/bin/entrypoint.sh"
+    shouldExist: true
+    fileMode: "0755"
+  - name: "Entrypoint library exists and is executable"
+    path: "/usr/local/bin/entrypoint.lib.sh"
+    shouldExist: true
+    fileMode: "0755"
+  - name: "Flyctl is installed"
+    path: "/usr/local/bin/flyctl"
+    shouldExist: true
+  - name: "Code-server directory exists"
+    path: "/app/code-server"
+    shouldExist: true
+  - name: "Fly.toml exists in config directory"
+    path: "/config/fly.toml"
+    shouldExist: true
+  - name: "Extra environment list exists in config directory"
+    path: "/config/extra_env.list"
+    shouldExist: true
+  - name: "container-structure-test binary exists (if installed)"
+    path: "/usr/local/bin/container-structure-test"
+    shouldExist: true
+  - name: "hadolint binary exists (if installed)"
+    path: "/usr/local/bin/hadolint"
+    shouldExist: true
+
+envVarTests:
+  - name: "SERVER_PORT is set correctly"
+    envVar: "SERVER_PORT"
+    expectedValue: "8080"
+  - name: "DEFAULT_WORKSPACE is set correctly"
+    envVar: "DEFAULT_WORKSPACE"
+    expectedValue: "/workspace"
+  - name: "DEBIAN_FRONTEND is set to noninteractive"
+    envVar: "DEBIAN_FRONTEND"
+    expectedValue: "noninteractive"
+
+metadataTests:
+  - name: "Entrypoint is set correctly"
+    metadataPath: "Config.Entrypoint"
+    expected: ["/usr/local/bin/entrypoint.sh"]
+
+exposedPortsTests:
+  - name: "Port 8080 is exposed"
+    expectedExposedPorts: ["8080/tcp"]
