@@ -98,6 +98,7 @@ RUN echo "**** Installing extra packages ****" && \
 # Entrypoint & Configuration Files
 ###############################################################################
 # Copy and set executable permissions on the entrypoint script.
+COPY entrypoint.lib.sh /usr/local/bin/entrypoint.lib.sh
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
