@@ -32,6 +32,7 @@ cd fly-code-server
 ### 2. Configure Environment
 
 Copy the example environment file and update values:
+
 ```bash
 cp .env-example .env
 nano .env  # Edit variables (see Configuration section below)
@@ -60,8 +61,8 @@ flyctl deploy      # Deploy to Fly.io
 
 ### .env File Variables
 
-| Variable                       | Description                                                |
-|--------------------------------|-------------------------------------------------------------------------------------------------------|
+| Variable                       | Description                                                                                           |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------- |
 | `PROJECT_NAME`                 | The name of your project on fly.io (e.g. my-code-server)                                              |
 | `CODE_SERVER_VERSION`          | Version of code-server (default: latest). Example: 4.96.4.                                            |
 | `GIT_USER`/`GIT_EMAIL`         | Git global configuration (required for commits).                                                      |
@@ -71,9 +72,10 @@ flyctl deploy      # Deploy to Fly.io
 | `AUTO_STOP_MACHINE`            | VM behavior on idle: stop, suspend, or off.                                                           |
 | `VM_SIZE`                      | The VM size on fly.io (e.g. shared-cpu-2x)                                                            |
 | `VM_MEMORY`                    | The VM memory setting (e.g. 2gb)                                                                      |
-| `INITIAL_DISK_SIZE`            | set the initial volume size for the volume `DEFAULT_WORKSPACE` is mounted on.                         |
+| `INITIAL_DISK_SIZE`            | Set the initial volume size for the volume `DEFAULT_WORKSPACE` is mounted on.                         |
 | `INSTALL_NODE_FROM_NODESOURCE` | If set to `true` will install nodejs from [Node Source](https://github.com/nodesource/distributions). |
 | `NODE_MAJOR`                   | Sets the version of node to install if installing from Node Source.                                   |
+| `USER_NAME`                    | The user to run code-server as (default: `coder`).                                                    |
 
 ### Fly.io Secrets
 
@@ -88,12 +90,32 @@ flyctl secrets set NAME=value
 
 ---
 
+## Running as `coder`
+
+By default, this deployment runs `code-server` as the user `coder` instead of `root`. This ensures consistency with tools in the environment and configuration across deployments. The home directory for `coder` is set to `$DEFAULT_WORKSPACE`.
+
+Additionally, the `coder` user has passwordless `sudo` access to simplify maintenance commands.
+
+To verify the user inside the running instance:
+
+```bash
+whoami  # Should output 'coder'
+echo $HOME  # Should output the DEFAULT_WORKSPACE path
+```
+
+To run privileged commands:
+
+```bash
+sudo <command>
+```
+
+---
+
 ## Accessing Your Instance
 
 After deployment:
 
 1. Visit your Fly.io app URL (e.g., `https://$PROJECT_NAME.fly.dev`).
-
 2. Log in with the password set in the `PASSWORD` secret.
 
 ---
@@ -101,9 +123,7 @@ After deployment:
 ## Customization
 
 - **Shell Environment**: Modify `bashrc` to add aliases, functions, or prompt changes.
-
 - **VM Resources**: Adjust `VM_SIZE` and `VM_MEMORY` in .env for more CPU/RAM.
-
 - **Code-Server Version**: Specify `CODE_SERVER_VERSION` in .env to pin a version of code-server.
 
 ---
@@ -111,19 +131,15 @@ After deployment:
 ## Troubleshooting
 
 - **"Invalid Password"**: Ensure `PASSWORD` is set as a Fly secret, not in .env.
-
 - **Build Failures**: Verify all `.env` variables are set and paths are correct.
-
-- **VM Not Starting**: Check `flyclt logs`. You need more memory than the default fly settings gives (1gb) to run code-server.
+- **VM Not Starting**: Check `flyctl logs`. You need more memory than the default Fly settings give (1GB) to run code-server.
 
 ---
 
 ## Notes
 
 - **Data Persistence**: Your workspace is stored in a Fly volume named `code_workspace`.
-
 - **SSH Keys**: Generated automatically at `${DEFAULT_WORKSPACE}/.ssh/id_rsa`.
-
 - **Git Configuration**: Set `GIT_USER` and `GIT_EMAIL` in `.env` to avoid warnings.
 
 ---
