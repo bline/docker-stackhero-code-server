@@ -194,11 +194,12 @@ launch_code_server() {
 
   # Preserve USER_NAME in a local variable before resetting environment
   local USER_TO_RUN="${USER_NAME}"
+  local APP="${FLY_APP_NAME}"
 
   log_status "Clearing environment"
   process_env_vars
 
-  echo -e "${GREEN}  *${RESET} Code-server will be accessible at: ${LIGHT_BLUE}https://${FLY_APP_NAME}.fly.dev/${RESET}"
+  echo -e "${GREEN}  *${RESET} Code-server will be accessible at: ${LIGHT_BLUE}https://${APP}.fly.dev/${RESET}"
   sudo -u "${USER_TO_RUN}" bash --login -c  "exec \"${CODE_SERVER_PATH}\" \
     --bind-addr \"0.0.0.0:${PORT}\" \
     --host \"0.0.0.0\" \
