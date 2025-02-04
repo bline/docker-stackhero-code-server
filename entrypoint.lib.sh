@@ -158,7 +158,7 @@ process_env_vars() {
       if [[ -z "${!var}" ]]; then
         log_warning "$var is defined but empty."
       else
-        log_status "Exported: ${LIGHT_BLUE}$var${RESET} (value: ${!var})"
+        log_status "Exported: ${LIGHT_BLUE}$var${RESET}"
       fi
       export "$var"
     else
