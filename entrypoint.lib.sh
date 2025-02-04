@@ -144,6 +144,7 @@ get_combined_unique_vars() {
   local -a vars_array=()
   for var in "${fly_vars[@]}" "${extra_vars[@]}"; do
     [[ -n "$var" && -z "${seen[$var]:-}" ]] || continue
+    [[ -n "$var" && -z "${seen[$var]:-}" ]] || continue
     seen[$var]=1
     vars_array+=("$var")
   done
