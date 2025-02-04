@@ -135,10 +135,7 @@ configure_git() {
   fi
 }
 
-# process_env_vars:
-#   Reads environment variable names from configuration files,
-#   deduplicates them, writes sudoers entries, and exports them with logging.
-process_env_vars() {
+get_combined_unique_vars() {
   local fly_vars=() extra_vars=()
   readarray -t fly_vars < <(get_fly_env_vars "${CONFIG_DIR}/fly.toml")
   readarray -t extra_vars < <(get_env_vars_array "${CONFIG_DIR}/extra_env.list")
@@ -146,26 +143,31 @@ process_env_vars() {
   declare -A seen
   local -a vars_array=()
   for var in "${fly_vars[@]}" "${extra_vars[@]}"; do
-    [[ -n "$var" && -z "${seen[$var]}" ]] || continue
+    [[ -n "$var" && -z "${seen[$var]:-}" ]] || continue
     seen[$var]=1
     vars_array+=("$var")
   done
+  echo "${vars_array[@]}"
+}
+
+# process_env_vars:
+#   Reads environment variable names from configuration files,
+#   deduplicates them, writes sudoers entries, and unset any env vars not configured.
+process_env_vars() {
+  readarray -t vars_array < <(get_combined_unique_vars)
 
   write_sudoers_for_vars "${USER_NAME}" "${vars_array[@]}"
 
-  for var in "${vars_array[@]}"; do
-    if [[ -v $var ]]; then
-      if [[ -z "${!var}" ]]; then
-        log_warning "$var is defined but empty."
-      else
-        log_status "Exported: ${LIGHT_BLUE}$var${RESET} (value: ${!var})"
-      fi
-      export "$var"
-    else
-      log_warning "$var is defined in config but unset in the environment."
+  # Convert array to newline-separated string for efficient grep check
+  allowed_vars=$(printf "%s\n" "${vars_array[@]}")
+
+  for var in $(env | awk -F= '{print $1}'); do
+    if ! grep -qx "$var" <<< "$allowed_vars"; then
+      unset "$var"
     fi
   done
 }
+
 
 # prepare_workspace:
 #   Prepares the workspace by copying configuration files and setting ownership.
@@ -188,9 +190,17 @@ prepare_workspace() {
 #   Launches code-server as the non-root user.
 launch_code_server() {
   log_head "Launching code-server as ${USER_NAME}"
+
+  # Preserve USER_NAME in a local variable before resetting environment
+  local USER_TO_RUN="${USER_NAME}"
+
+  log_status "Clearing environment"
+  process_env_vars
+
   echo -e "${GREEN}  *${RESET} Code-server will be accessible at: ${LIGHT_BLUE}https://${FLY_APP_NAME}.fly.dev/${RESET}"
-  exec sudo -i -u "${USER_NAME}" "${CODE_SERVER_PATH}" \
-    --bind-addr "0.0.0.0:${PORT}" \
-    --host "0.0.0.0" \
+  sudo -u "${USER_TO_RUN}" bash --login -c  "exec \"${CODE_SERVER_PATH}\" \
+    --bind-addr \"0.0.0.0:${PORT}\" \
+    --host \"0.0.0.0\" \
     --disable-telemetry
+  "
 }

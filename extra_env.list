@@ -7,8 +7,21 @@
 #
 # Add one variable name per line. Lines starting with "#" are ignored.
 
+# Set these two as secrets to use them
 # A token for code-server and extensions to use.
 GIT_TOKEN
-
 # The password for login to code-server
 PASSWORD
+
+# Fly variables
+FLYCTL_INSTALL
+FLY_ALLOC_ID
+FLY_APP_NAME
+FLY_IMAGE_REF
+FLY_MACHINE_ID
+FLY_MACHINE_VERSION
+FLY_PRIVATE_IP
+FLY_PROCESS_GROUP
+FLY_PUBLIC_IP
+FLY_REGION
+FLY_VM_MEMORY_MB

@@ -32,9 +32,6 @@ ensure_dir "SSH" "${SSH_DIR}" 700
 # Configure Git if applicable.
 configure_git
 
-# Process and export environment variables.
-process_env_vars
-
 # Prepare the workspace (e.g., copy .bashrc and set ownership).
 prepare_workspace
 
