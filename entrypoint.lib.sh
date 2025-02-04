@@ -189,8 +189,11 @@ prepare_workspace() {
 launch_code_server() {
   log_head "Launching code-server as ${USER_NAME}"
   echo -e "${GREEN}  *${RESET} Code-server will be accessible at: ${LIGHT_BLUE}https://${FLY_APP_NAME}.fly.dev/${RESET}"
-  exec sudo -i -u "${USER_NAME}" "${CODE_SERVER_PATH}" \
-    --bind-addr "0.0.0.0:${PORT}" \
-    --host "0.0.0.0" \
-    --disable-telemetry
+  sudo -E -u "${USER_NAME}" bash -c "
+    source ~/.bashrc &&
+    exec \"${CODE_SERVER_PATH}\" \
+      --bind-addr \"0.0.0.0:${PORT}\" \
+      --host \"0.0.0.0\" \
+      --disable-telemetry
+  "
 }
