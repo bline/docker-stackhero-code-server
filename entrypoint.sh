@@ -7,17 +7,35 @@ set -euo pipefail
 # Environment Variables & Defaults
 ###############################################################################
 # These variables should be set via the Dockerfile or container environment.
+
+ENV_PATH=${ENV_PATH:-"/config/env.sh"}
+# /config/env.sh is generated in Dockerfile
+# ./env.sh is just for testing and to make shellcheck happy
+# shellcheck source=./env.sh
+source "$ENV_PATH"
+
+# Setup our environment
+DEFAULT_WORKSPACE="${DEFAULT_WORKSPACE:-/workspace}"
+SERVER_PORT="${SERVER_PORT:-8080}"
+PORT=${SERVER_PORT}
+SSH_DIR="${DEFAULT_WORKSPACE}/.ssh"
+USER_NAME="${USER_NAME:-coder}"
+USER_SHELL="${USER_SHELL:-/bin/bash}"
+ENABLE_GIT_CONFIG="${ENABLE_GIT_CONFIG:-"false"}"
+GIT_USER="${GIT_USER:-""}"
+GIT_EMAIL="${GIT_EMAIL:-""}"
+FLY_TOML="${FLY_TOML:-/config/fly.toml}"
+
 : "${DEFAULT_WORKSPACE:?DEFAULT_WORKSPACE must be set}"
 : "${USER_NAME:?USER_NAME must be set}"
 : "${FLY_APP_NAME:?FLY_APP_NAME must be set}"
-PORT=${PORT:-8080}
-SSH_DIR="${DEFAULT_WORKSPACE}/.ssh"
 
 ###############################################################################
 # Source Helper Functions
 ###############################################################################
 # Source the helper library which also sets up terminal colors.
 LIB_PATH=${LIB_PATH:-"/usr/local/bin/entrypoint.lib.sh"}
+# shellcheck source=./entrypoint.lib.sh
 source "$LIB_PATH"
 
 ###############################################################################
