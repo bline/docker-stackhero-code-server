@@ -3,43 +3,12 @@
 # This library contains helper functions for the entrypoint script,
 # including logging functions and common utility routines.
 #
-# Terminal Colors (Portable)
-if command -v tput &>/dev/null; then
-  BLUE=$(tput setaf 4)
-  GREEN=$(tput setaf 2)
-  RED=$(tput setaf 1)
-  LIGHT_BLUE=$(tput setaf 6)
-  RESET=$(tput sgr0)
-else
-  BLUE=""
-  GREEN=""
-  RED=""
-  LIGHT_BLUE=""
-  RESET=""
-fi
+
+source /usr/local/bin/functions.lib.sh
 
 CONFIG_DIR="${CONFIG_DIR:-/config}"
 SUDOERS_DIR="${SUDOERS_DIR:-/etc/sudoers.d}"
 CODE_SERVER_PATH="${CODE_SERVER_PATH:-/app/code-server/bin/code-server}"
-
-###############################################################################
-# Logging Functions
-###############################################################################
-log_head() {
-  echo -e "${BLUE}==== $* ====${RESET}"
-}
-
-log_status() {
-  echo -e "${GREEN}  *${RESET} $*"
-}
-
-log_warning() {
-  echo -e "${RED}  *${RESET} Warning: $*"
-}
-
-log_error() {
-  echo -e "${RED}ERROR:${RESET} $*"
-}
 
 ###############################################################################
 # Helper Functions
@@ -50,19 +19,15 @@ log_error() {
 #   Ignores commented/empty lines and strips quotes and extra whitespace.
 get_fly_env_vars() {
   local fly_toml="$1"
-  [[ -f "$fly_toml" ]] || return 0
+  declare -A env_vars
 
-  awk '
-    BEGIN { in_env=0 }
-    /^\[env\]/ { in_env=1; next }
-    /^\[/ { in_env=0 }
-    in_env {
-      split($0, a, "=");
-      key = a[1];
-      gsub(/^[[:space:]]+|[[:space:]]+$/, "", key);
-      if (key != "" && key !~ /^#/) print key;
-    }
-  ' "$fly_toml"
+  [[ -f "$fly_toml" ]] || return 0
+  FLY_TOML="$fly_toml"
+  extract_toml_section "env" env_vars
+
+  for key in "${!env_vars[@]}"; do
+    echo "$key"
+  done
 }
 
 
@@ -73,31 +38,6 @@ get_env_vars_array() {
   [[ -f "$env_file" ]] || return 0
 
   awk '!/^#/ && NF { gsub(/^[[:space:]]+|[[:space:]]+$/, ""); print }' "$env_file"
-}
-
-# write_sudoers_for_vars:
-#   Writes a sudoers entry to allow the specified user to preserve a list of
-#   environment variables. Each variable gets its own Defaults line.
-#   Only updates the file if the content has changed.
-write_sudoers_for_vars() {
-  local username="$1"
-  shift
-  [[ $# -eq 0 ]] && return 0  # Nothing to do if no variables provided
-
-  local sudoers_file="${SUDOERS_DIR}/${username}_env"
-  local temp_file
-  temp_file="$(mktemp)"
-
-  for var in "$@"; do
-    echo "Defaults:${username} env_keep += \"$var\"" >> "$temp_file"
-  done
-
-  if [[ ! -f "$sudoers_file" ]] || ! cmp -s "$temp_file" "$sudoers_file"; then
-    mv "$temp_file" "$sudoers_file"
-    chmod 0440 "$sudoers_file"
-  else
-    rm "$temp_file"
-  fi
 }
 
 # ensure_dir:
@@ -123,11 +63,11 @@ ensure_dir() {
 configure_git() {
   if [[ -n "${GIT_USER:-}" && -n "${GIT_EMAIL:-}" ]]; then
     if ! git config --global user.name >/dev/null 2>&1; then
-      log_status "Configuring Git user: ${LIGHT_BLUE}${GIT_USER}${RESET}"
+      log_status "Configuring Git user: $(color_cyan "$GIT_USER")"
       git config --global user.name "${GIT_USER}"
     fi
     if ! git config --global user.email >/dev/null 2>&1; then
-      log_status "Configuring Git email: ${LIGHT_BLUE}${GIT_EMAIL}${RESET}"
+      log_status "Configuring Git email: $(color_cyan "$GIT_EMAIL")"
       git config --global user.email "${GIT_EMAIL}"
     fi
   else
@@ -144,30 +84,36 @@ get_combined_unique_vars() {
   local -a vars_array=()
   for var in "${fly_vars[@]}" "${extra_vars[@]}"; do
     [[ -n "$var" && -z "${seen[$var]:-}" ]] || continue
-    [[ -n "$var" && -z "${seen[$var]:-}" ]] || continue
     seen[$var]=1
     vars_array+=("$var")
   done
-  echo "${vars_array[@]}"
+  printf '%s\n' "${vars_array[@]}"
 }
 
 # process_env_vars:
 #   Reads environment variable names from configuration files,
 #   deduplicates them, writes sudoers entries, and unset any env vars not configured.
 process_env_vars() {
+
+  # get variables that are configured to keep
   readarray -t vars_array < <(get_combined_unique_vars)
+  echo "vars_array: ${vars_array[*]}"
 
-  write_sudoers_for_vars "${USER_NAME}" "${vars_array[@]}"
+  KEEP_VARS=("PATH" "HOME" "SHELL" "LOGNAME" "USER" "USERNAME" "TERM" "PWD" "_" "HOSTNAME")
+  KEEP_VARS+=("${vars_array[@]}")
 
-  # Convert array to newline-separated string for efficient grep check
-  allowed_vars=$(printf "%s\n" "${vars_array[@]}")
-
-  for var in $(env | awk -F= '{print $1}'); do
-    if ! grep -qx "$var" <<< "$allowed_vars"; then
+  # remove any exposed environment variables (including functions)
+  # that aren't in KEEP_VARS
+  for var in $(compgen -e); do
+    # if var is NOT in KEEP_VARS, unset it
+    if [[ ! " ${KEEP_VARS[*]} " =~ " $var " ]]; then
+      log_status "unset \"$var\""
       unset "$var"
     fi
   done
+
 }
+
 
 
 # prepare_workspace:
@@ -195,13 +141,14 @@ launch_code_server() {
   # Preserve USER_NAME in a local variable before resetting environment
   local USER_TO_RUN="${USER_NAME}"
   local APP="${FLY_APP_NAME}"
+  local APP_PORT="${PORT}"
 
   log_status "Clearing environment"
   process_env_vars
 
-  echo -e "${GREEN}  *${RESET} Code-server will be accessible at: ${LIGHT_BLUE}https://${APP}.fly.dev/${RESET}"
-  sudo -u "${USER_TO_RUN}" bash --login -c  "exec \"${CODE_SERVER_PATH}\" \
-    --bind-addr \"0.0.0.0:${PORT}\" \
+  log_status "Code-server will be accessible at: $(color_cyan "https://${APP}.fly.dev/")"
+  exec sudo -E -u "${USER_TO_RUN}" bash --login -c  "exec \"${CODE_SERVER_PATH}\" \
+    --bind-addr \"0.0.0.0:${APP_PORT}\" \
     --host \"0.0.0.0\" \
     --disable-telemetry
   "
