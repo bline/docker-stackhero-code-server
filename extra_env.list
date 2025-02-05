@@ -12,6 +12,9 @@ GITHUB_TOKEN
 # The password for login to code-server
 PASSWORD
 
+# Set the timezone
+TZ
+
 # Fly variables
 FLYCTL_INSTALL
 FLY_ALLOC_ID
