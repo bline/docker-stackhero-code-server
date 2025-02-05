@@ -5,12 +5,15 @@ FROM debian:bookworm-slim
 # Build-time Arguments
 ###############################################################################
 ARG BUILD_DATE
-ARG CODE_RELEASE
+ARG CODE_RELEASE=latest
 ARG DEBIAN_FRONTEND="noninteractive"
 ARG DEFAULT_WORKSPACE=/workspace
 ARG SERVER_PORT=8080
 ARG USER_NAME=coder
 ARG USER_SHELL=/bin/bash
+ARG ENABLE_GIT_CONFIG=false
+ARG GIT_USER
+ARG GIT_EMAIL
 
 # New optional arguments for testing tools.
 ARG INSTALL_NODE=false
@@ -21,21 +24,11 @@ ARG INSTALL_HADOLINT=false
 ARG HADOLINT_VERSION=v2.12.0
 ARG INSTALL_RUST=false
 ARG RUST_VERSION=1.84.1
+ARG RUST_PACKAGES=""
 ARG INSTALL_FLYCTL=false
 
-###############################################################################
-# Environment Variables
-###############################################################################
-# Set environment variables from build-time args.
-ENV DEBIAN_FRONTEND=${DEBIAN_FRONTEND} \
-    VERSION="v${CODE_RELEASE:-latest}" \
-    DEFAULT_WORKSPACE=${DEFAULT_WORKSPACE} \
-    SERVER_PORT=${SERVER_PORT} \
-    USER_NAME=${USER_NAME} \
-    USER_SHELL=${USER_SHELL}
-
 # Labels for build metadata.
-LABEL build_version="blineCodeServer version: ${VERSION} Build-date: ${BUILD_DATE}" \
+LABEL build_version="blineCodeServer version: ${CODE_RELEASE} Build-date: ${BUILD_DATE}" \
       maintainer="sbeck"
 
 ###############################################################################
@@ -68,7 +61,7 @@ RUN echo "**** Installing runtime dependencies ****" && \
     curl -o /tmp/code-server.tar.gz -L \
       "https://github.com/coder/code-server/releases/download/v${CODE_RELEASE}/code-server-${CODE_RELEASE}-linux-amd64.tar.gz" && \
     tar xf /tmp/code-server.tar.gz -C /app/code-server --strip-components=1 && \
-    printf "blineCodeServer version: ${VERSION}\nBuild-date: ${BUILD_DATE}" > /build_version
+    printf "blineCodeServer version: ${CODE_RELEASE}\nBuild-date: ${BUILD_DATE}" > /build_version
 
 
 ###############################################################################
@@ -124,6 +117,21 @@ COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 RUN rm -rf /config/*
+
+# So we can share configuration with entrypoint.sh, Fly.io ignores ENV settings in Dockerfile.
+# So we can share configuration with entrypoint.sh, Fly.io ignores ENV settings in Dockerfile.
+RUN mkdir -p /config && \
+  printf "%s\n" \
+    "CODE_RELEASE=\"${CODE_RELEASE}\"" \
+    "DEFAULT_WORKSPACE=\"${DEFAULT_WORKSPACE}\"" \
+    "SERVER_PORT=\"${SERVER_PORT}\"" \
+    "USER_NAME=\"${USER_NAME}\"" \
+    "USER_SHELL=\"${USER_SHELL}\"" \
+    "ENABLE_GIT_CONFIG=\"${ENABLE_GIT_CONFIG}\"" \
+    "GIT_USER=\"${GIT_USER:-}\"" \
+    "GIT_EMAIL=\"${GIT_EMAIL:-}\"" \
+  > /config/env.sh
+
 COPY bashrc /tmp/.bashrc
 COPY fly.toml /config/fly.toml
 COPY packages.list /config/packages.list
