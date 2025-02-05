@@ -1,0 +1,236 @@
+###############################################################################
+# Fly.io Deployment Configuration for code-server
+#
+# This fly.toml is a self-contained configuration file. It merges settings
+# previously spread across fly-template.toml, .env-example, and build.sh.
+# Adjust the values and comments below to fit your needs, then deploy via:
+#
+#     flyctl deploy
+#
+# By default, this configuration assumes your Dockerfile is in the same
+# directory. If your Dockerfile lives elsewhere, update the paths below.
+###############################################################################
+
+# ----------------------------------------------------------------
+# App Name and Basic Fly.io Configuration
+# ----------------------------------------------------------------
+
+# The name of your Fly.io application. This must be unique across Fly.
+# Your app will be accessible at https://<app>.fly.dev
+app = "my-code-server"
+
+# ----------------------------------------------------------------
+# Build Configuration
+# ----------------------------------------------------------------
+[build]
+# Path to your Dockerfile relative to the project root
+dockerfile = "Dockerfile"
+
+[build.args]
+# ----------------------------------------------------------------
+# Dockerfile Build Arguments
+# ----------------------------------------------------------------
+
+# BUILD_DATE: Typically used to record when the image was built.
+# Feel free to update this manually or remove if you don’t rely on it.
+BUILD_DATE = "2025-02-05"
+
+# CODE_RELEASE: Which code-server version to install.
+# Use "latest" to pull the newest release or a pinned version like "4.96.4".
+CODE_RELEASE = "4.96.4"
+
+# DEFAULT_WORKSPACE: The directory where your code workspace is located.
+# This should match the directory you mount as a volume (see [[mounts]] below).
+DEFAULT_WORKSPACE = "/workspace"
+
+# SERVER_PORT: The port code-server will listen on. This port is internal.
+# Generally 8080 is a good default.
+SERVER_PORT = "8080"
+
+# USER_NAME: Name of the default user created inside the container.
+USER_NAME = "coder"
+
+# USER_SHELL: Shell that the user will use (e.g., /bin/bash, /bin/zsh).
+USER_SHELL = "/bin/bash"
+
+# INSTALL_NODE: Install a specific major version of Node.js from NodeSource.
+# - true  → Installs the specified Node.js version (see NODE_MAJOR_VERSION below).
+# - false → Skips Node.js installation (note: code-server includes its own Node.js runtime).
+INSTALL_NODE = "true"
+
+# NODE_MAJOR_VERSION: Major version of Node.js to install when INSTALL_NODE is "true".
+#   For example, "22" to install Node.js 22.x.
+NODE_MAJOR_VERSION = "22"
+
+# INSTALL_CST:
+#   true  → Installs container-structure-test for validating container structure
+#   false → Skips this installation
+INSTALL_CST = "false"
+
+# CST_VERSION: Version/tag of container-structure-test to install (e.g., "latest").
+CST_VERSION = "latest"
+
+# INSTALL_HADOLINT:
+#   true  → Installs hadolint for Dockerfile linting
+#   false → Skips this installation
+INSTALL_HADOLINT = "false"
+
+# HADOLINT_VERSION: Version/tag of hadolint to install (e.g., "v2.12.0" or "latest").
+HADOLINT_VERSION = "v2.12.0"
+
+# INSTALL_RUST:
+#   true   → Installs rust system-wide in /opt/rust
+#   false  → Skips this installation
+INSTALL_RUST = "false"
+
+# RUST_VERSION: Version of rust to install
+#   (see https://forge.rust-lang.org/infra/other-installation-methods.html#standalone-installers)
+RUST_VERSION = "1.84.1"
+
+# RUST_PACKAGES: Space-separated list of Rust Cargo packages to install globally.
+#  * Crates.io packages are installed with `cargo install <package>`.
+#  * GitHub-based packages (URLs containing `/` or `@`) are installed with `cargo install --git <repo>`.
+#  * Ensure Rust is installed (`INSTALL_RUST=true`) before adding packages.
+RUST_PACKAGES = "bat fd dust https://github.com/bvaisvil/zenith.git"
+# Here are some crates you might want to explore with this:
+# bat       → Provides syntax highlighting and improved file viewing (alternative to `cat`).
+# fd        → A faster and more intuitive alternative to the find command, offering better search capabilities.
+# dust      → Displays disk usage in a user-friendly format, helping identify large directories easily.
+# exa       → Enhanced ls command with colorization and detailed information about files.
+# ripgrep   → Powerful and fast text searching tool with advanced features like regex support
+# hyperfine → Allows precise benchmarking of commands, showing detailed performance metrics
+# sd        → A more manageable version of sed for text manipulation
+# procs     → Provides a detailed view of running processes, similar to ps but with better visualization
+# zoxide    → Learns your directory usage patterns and offers faster navigation with a smart cd command
+# tokei     → Counts lines of code within a project or directory
+
+# ----------------------------------------------------------------
+# Runtime Environment
+# ----------------------------------------------------------------
+[env]
+# TZ: The timezone you want your container to use.
+TZ = "America/New_York"
+
+# DEFAULT_WORKSPACE: Matches the above build arg for your working directory.
+DEFAULT_WORKSPACE = "/workspace"
+
+# PORT: The port code-server uses inside the container. Fly will map it externally.
+PORT = "8080"
+
+# HOME: The default home directory for the user. Often matches the workspace.
+HOME = "/workspace"
+
+# GIT_USER: Global Git username (git config --global user.name).
+#   Uncomment and set to your name.
+# GIT_USER = "Your Name"
+
+# GIT_EMAIL: Global Git email (git config --global user.email).
+#   Uncomment and set to your email.
+# GIT_EMAIL = "you@domain.com"
+
+# USER_NAME: Same user as above to keep container internals consistent.
+USER_NAME = "coder"
+
+# ----------------------------------------------------------------
+# HTTP Service and Auto-Stop Configuration
+# ----------------------------------------------------------------
+[http_service]
+# internal_port: Must match the SERVER_PORT above. Do NOT quote numeric values here.
+internal_port = 8080
+
+# force_https: Forces traffic to use https whenever possible. Typically leave as true.
+force_https = true
+
+# auto_stop_machines: Define how Fly.io handles idle machines.
+#   "off"     → Machine always runs (higher cost).
+#   "stop"    → Completely shuts down when idle (cheapest, requires cold start).
+#   "suspend" → Pauses machine, preserving memory/cache for faster resume.
+auto_stop_machines = "stop"
+
+
+# auto_start_machines: Allows the machine to be started automatically upon incoming requests.
+auto_start_machines = true
+
+[http_service.http_options]
+# idle_timeout: Idle time (in seconds) before the machine is put to sleep/stopped/suspended.
+#   Must be an integer not exceeding 900 (15 minutes).
+#   If auto_stop_machines is set to "stop" or "suspend," this is the duration of inactivity after which
+#   the VM will be stopped or suspended.
+idle_timeout = 900
+
+# ----------------------------------------------------------------
+# Volume Mounts
+# ----------------------------------------------------------------
+# This is where we attach a persistent volume named "code_workspace"
+# to the /workspace directory inside the container, matching DEFAULT_WORKSPACE.
+[[mounts]]
+source = "code_workspace"
+destination = "/workspace"
+# Find volume ID using:
+#   flyctl volumes list
+# To increase volume size, use:
+#   flyctl volumes extend <volume-id> --size=10  # Expands to 10GB
+
+initial_size = "5gb"
+
+# ----------------------------------------------------------------
+# VM Configuration
+# ----------------------------------------------------------------
+# Configures the machine size and memory allocated to the Fly VM.
+# ----------------------------------------------------------------
+# Fly.io VM Pricing Table (as of latest available data 5-Feb-2025)
+# ----------------------------------------------------------------
+# This table lists the pricing for different VM configurations.
+# Prices are in USD and represent per-second, per-hour, and per-month costs.
+#
+# ┌─────────────────┬───────────────┬────────┬──────────────┬────────────┬────────────┐
+# │ Plan            │ CPU(s)        │ RAM    │ Price/sec    │ Price/hour │ Price/month│
+# ├─────────────────┼───────────────┼────────┼──────────────┼────────────┼────────────┤
+# │ shared-cpu-1x   │ 1 shared      │ 256MB  │ $0.00000075  │ $0.0027    │ $1.94      │
+# │                 │               │ 512MB  │ $0.00000123  │ $0.0044    │ $3.19      │
+# │                 │               │ 1GB    │ $0.00000220  │ $0.0079    │ $5.70      │
+# │                 │               │ 2GB    │ $0.00000413  │ $0.0149    │ $10.70     │
+# ├─────────────────┼───────────────┼────────┼──────────────┼────────────┼────────────┤
+# │ shared-cpu-2x   │ 2 shared      │ 512MB  │ $0.00000150  │ $0.0054    │ $3.89      │
+# │                 │               │ 1GB    │ $0.00000246  │ $0.0089    │ $6.39      │
+# │                 │               │ 2GB    │ $0.00000440  │ $0.0158    │ $11.39     │
+# │                 │               │ 4GB    │ $0.00000826  │ $0.0297    │ $21.40     │
+# ├─────────────────┼───────────────┼────────┼──────────────┼────────────┼────────────┤
+# │ shared-cpu-4x   │ 4 shared      │ 1GB    │ $0.00000300  │ $0.0108    │ $7.78      │
+# │                 │               │ 2GB    │ $0.00000493  │ $0.0177    │ $12.78     │
+# │                 │               │ 4GB    │ $0.00000879  │ $0.0316    │ $22.78     │
+# │                 │               │ 8GB    │ $0.00001651  │ $0.0594    │ $42.79     │
+# ├─────────────────┼───────────────┼────────┼──────────────┼────────────┼────────────┤
+# │ shared-cpu-8x   │ 8 shared      │ 2GB    │ $0.00000600  │ $0.0216    │ $15.55     │
+# │                 │               │ 4GB    │ $0.00000986  │ $0.0355    │ $25.56     │
+# │                 │               │ 8GB    │ $0.00001758  │ $0.0633    │ $45.57     │
+# │                 │               │ 16GB   │ $0.00003302  │ $0.1189    │ $85.59     │
+# ├─────────────────┼───────────────┼────────┼──────────────┼────────────┼────────────┤
+# │ performance-1x  │ 1 dedicated   │ 2GB    │ $0.00001196  │ $0.0431    │ $31.00     │
+# │                 │               │ 4GB    │ $0.00001582  │ $0.0570    │ $41.01     │
+# │                 │               │ 8GB    │ $0.00002354  │ $0.0847    │ $61.02     │
+# ├─────────────────┼───────────────┼────────┼──────────────┼────────────┼────────────┤
+# │ performance-2x  │ 2 dedicated   │ 4GB    │ $0.00002392  │ $0.0861    │ $62.00     │
+# │                 │               │ 8GB    │ $0.00003164  │ $0.1139    │ $82.01     │
+# │                 │               │ 16GB   │ $0.00004708  │ $0.1695    │ $122.03    │
+# ├─────────────────┼───────────────┼────────┼──────────────┼────────────┼────────────┤
+# │ performance-4x  │ 4 dedicated   │ 8GB    │ $0.00004784  │ $0.1722    │ $124.00    │
+# │                 │               │ 16GB   │ $0.00006328  │ $0.2278    │ $164.02    │
+# │                 │               │ 32GB   │ $0.00009416  │ $0.3390    │ $244.06    │
+# ├─────────────────┼───────────────┼────────┼──────────────┼────────────┼────────────┤
+# │ performance-8x  │ 8 dedicated   │ 16GB   │ $0.00009568  │ $0.3444    │ $248.00    │
+# │                 │               │ 32GB   │ $0.00012656  │ $0.4556    │ $328.04    │
+# │                 │               │ 64GB   │ $0.00018832  │ $0.6780    │ $488.13    │
+# ├─────────────────┼───────────────┼────────┼──────────────┼────────────┼────────────┤
+# │ performance-16x │ 16 dedicated  │ 32GB   │ $0.00019136  │ $0.6889    │ $496.01    │
+# │                 │               │ 64GB   │ $0.00025312  │ $0.9112    │ $656.09    │
+# │                 │               │ 128GB  │ $0.00037664  │ $1.3559    │ $976.25    │
+# └─────────────────┴───────────────┴────────┴──────────────┴────────────┴────────────┘
+#
+# Notes:
+#  * "shared-cpu" plans use vCPUs that share host resources (cheaper but less predictable performance).
+#  * "performance" plans provide dedicated CPU cores (higher performance, more stable).
+#  * All prices are in USD and may vary. Always check Fly.io's pricing page for the latest rates.
+[[vm]]
+size = "shared-cpu-2x"
+memory = "2gb"  # Minimum recommended for code-server. Increase if running multiple extensions.
