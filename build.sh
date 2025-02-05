@@ -1,9 +1,18 @@
 #!/bin/bash
 
-if [ ! -f ".env" ]; then
-  echo "You must create a .env file first. See .env.example file for a starting point"
+###############################################################################
+# Load Logging & Utility Functions
+###############################################################################
+if [[ -f "./functions.lib.sh" ]]; then
+  source "./functions.lib.sh"
+else
+  echo -e "$(tput setaf 1)ERROR: Must be run in bline-code-server root directory$(tput sgr0)" >&2
   exit 1
 fi
+
+FLY_TOML="${1:-fly.toml}"
+shift
+FLY_TOML_TEMPLATE="${1:-fly-template.toml}"
 
 while read -r line || [[ -n "$line" ]]; do
   # Skip comments and empty lines
@@ -20,7 +29,7 @@ done < .env
 
 export BUILD_DATE=$(date +%Y-%m-%d)
 
-cat fly-template.toml | envsubst > fly.toml
+cat "$FLY_TOML_TEMPLATE" | envsubst > "$FLY_TOML"
 
 CAT="cat"
 type -P batcat &> /dev/null
@@ -28,8 +37,8 @@ if [ $? -eq 0 ]; then
   CAT="batcat --paging=never --style=plain -f"
 fi
 
-echo "Generated fly.toml"
-$CAT fly.toml
+log_status "Generated $FLY_TOML"
+$CAT "$FLY_TOML"
 
 echo
-echo "Ready to flyctl deploy! 🚀"
+log_status "Ready to flyctl deploy! 🚀"

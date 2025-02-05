@@ -1,15 +1,14 @@
 # This file contains a list of environment variable names that should be preserved
 # when switching to the non-root user ($USER_NAME) via sudo.
 #
-# Any variables listed here will:
-#  1. Be included in the sudoers configuration, allowing them to persist across sudo calls.
-#  2. Be exported for use by code-server and other applications running under $USER_NAME.
+# Any variables listed here will be exported for use by code-server and other
+# applications running under $USER_NAME.
 #
 # Add one variable name per line. Lines starting with "#" are ignored.
 
 # Set these two as secrets to use them
 # A token for code-server and extensions to use.
-GIT_TOKEN
+GITHUB_TOKEN
 # The password for login to code-server
 PASSWORD
 

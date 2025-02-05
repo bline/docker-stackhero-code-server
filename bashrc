@@ -5,6 +5,8 @@ if [ -f /etc/bash_completion ]; then
   . /etc/bash_completion
 fi
 
+source /usr/local/bin/functions.lib.sh
+
 # Enable colors in terminal
 export LS_COLORS="di=34:fi=0:ln=36:pi=33:so=35:bd=34;46:cd=34;43:or=31;1:mi=31;1:ex=32:*.tar=31:*.zip=31:*.gz=31"
 export CLICOLOR=1
@@ -13,14 +15,16 @@ export CLICOLOR=1
 FLY_APP_NAME=${FLY_APP_NAME:-unknown}
 FLY_REGION=${FLY_REGION:-unknown}
 
-fly_toml="/config/fly.toml"
+FLY_TOML="/config/fly.toml"
 
 # Try to extract cpu_kind and cpus.
 # This assumes that if they exist they are in a line like:
 #   cpu_kind = "shared"
 #   cpus = 2
-cpu_kind=$(grep -E '^\s*cpu_kind\s*=' "$fly_toml" | head -n1 | sed -E 's/.*=\s*"([^"]*)".*/\1/')
-cpus=$(grep -E '^\s*cpus\s*=' "$fly_toml" | head -n1 | sed -E 's/.*=\s*([0-9]+).*/\1/')
+
+cpu_kind=$(extract_toml_value "vm.cpu_kind")
+cpus=$(extract_toml_value "vm.cpus")
+
 
 if [[ -n "$cpu_kind" && -n "$cpus" ]]; then
   # If both values are present, build the machine type string.
@@ -28,7 +32,7 @@ if [[ -n "$cpu_kind" && -n "$cpus" ]]; then
 else
   # Otherwise, fall back to the size setting.
   # This expects a line like: size = "shared-cpu-2x"
-  FLY_MACHINE_TYPE=$(grep '^size' "$fly_toml" | awk -F '"' '{print $2}')
+  FLY_MACHINE_TYPE=$(extract_toml_value "vm.size")
 fi
 
 # If no valid value was found, default to shared-cpu-1x.
@@ -36,7 +40,7 @@ if [[ -z "$FLY_MACHINE_TYPE" ]]; then
   FLY_MACHINE_TYPE="shared-cpu-1x"
 fi
 
-FLY_MEMORY=$(grep '^memory' "$fly_toml" | awk -F '"' '{print $2}')
+FLY_MEMORY=$(extract_toml_value "vm.memory")
 
 # Enable Git branch display in prompt
 if [ -f /usr/share/git/completion/git-prompt.sh ]; then
