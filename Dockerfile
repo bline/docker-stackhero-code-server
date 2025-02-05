@@ -4,8 +4,6 @@ FROM debian:bookworm-slim
 ###############################################################################
 # Build-time Arguments
 ###############################################################################
-ARG INSTALL_NODE_FROM_NODESOURCE=false
-ARG NODE_MAJOR=22
 ARG BUILD_DATE
 ARG CODE_RELEASE
 ARG DEBIAN_FRONTEND="noninteractive"
@@ -15,10 +13,15 @@ ARG USER_NAME=coder
 ARG USER_SHELL=/bin/bash
 
 # New optional arguments for testing tools.
-ARG INSTALL_CONTAINER_STRUCTURE_TEST=false
-ARG CONTAINER_STRUCTURE_TEST_VERSION=latest
+ARG INSTALL_NODE=false
+ARG NODE_MAJOR_VERSION=22
+ARG INSTALL_CST=false
+ARG CST_VERSION=latest
 ARG INSTALL_HADOLINT=false
 ARG HADOLINT_VERSION=v2.12.0
+ARG INSTALL_RUST=false
+ARG RUST_VERSION=1.84.1
+ARG INSTALL_FLYCTL=false
 
 ###############################################################################
 # Environment Variables
@@ -28,9 +31,6 @@ ENV DEBIAN_FRONTEND=${DEBIAN_FRONTEND} \
     VERSION="v${CODE_RELEASE:-latest}" \
     DEFAULT_WORKSPACE=${DEFAULT_WORKSPACE} \
     SERVER_PORT=${SERVER_PORT} \
-    SSH_DIR=${DEFAULT_WORKSPACE}/.ssh \
-    NODE_MAJOR=${NODE_MAJOR} \
-    INSTALL_NODE_FROM_NODESOURCE=${INSTALL_NODE_FROM_NODESOURCE} \
     USER_NAME=${USER_NAME} \
     USER_SHELL=${USER_SHELL}
 
@@ -54,19 +54,6 @@ RUN useradd -m -d "$DEFAULT_WORKSPACE" --shell ${USER_SHELL} ${USER_NAME} && \
     chmod 0440 /etc/sudoers.d/${USER_NAME}
 
 ###############################################################################
-# Node.js Installation
-###############################################################################
-RUN apt-get update && \
-    if [ "$INSTALL_NODE_FROM_NODESOURCE" = "true" ]; then \
-      echo "Installing Node.js from NodeSource (Node.js ${NODE_MAJOR})." && \
-      curl -fsSL https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash -; \
-    else \
-      echo "Installing Node.js from Debian's default repository (Node.js 18)."; \
-    fi && \
-    apt-get install -y nodejs && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-###############################################################################
 # Install code-server
 ###############################################################################
 RUN echo "**** Installing runtime dependencies ****" && \
@@ -83,29 +70,41 @@ RUN echo "**** Installing runtime dependencies ****" && \
     tar xf /tmp/code-server.tar.gz -C /app/code-server --strip-components=1 && \
     printf "blineCodeServer version: ${VERSION}\nBuild-date: ${BUILD_DATE}" > /build_version
 
-###############################################################################
-# Install flyctl
-###############################################################################
-RUN echo "**** Installing flyctl ****" && \
-    curl -L https://fly.io/install.sh | sh
 
 ###############################################################################
-# Optionally Install Container-Structure-Test and Hadolint
+# Feature Installation
 ###############################################################################
-RUN if [ "$INSTALL_CONTAINER_STRUCTURE_TEST" = "true" ]; then \
-      echo "**** Installing container-structure-test ****" && \
-      curl -Lo /usr/local/bin/container-structure-test https://storage.googleapis.com/container-structure-test/${CONTAINER_STRUCTURE_TEST_VERSION}/container-structure-test && \
-      chmod +x /usr/local/bin/container-structure-test; \
-    else \
-      echo "Skipping container-structure-test installation."; \
-    fi && \
-    if [ "$INSTALL_HADOLINT" = "true" ]; then \
-      echo "**** Installing hadolint ****" && \
-      curl -L https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-Linux-x86_64 -o /usr/local/bin/hadolint && \
-      chmod +x /usr/local/bin/hadolint; \
-    else \
-      echo "Skipping hadolint installation."; \
-    fi
+
+COPY features /tmp/features
+# Use `:` to reference ARG variables to ensure Docker exports them
+RUN apt-get update && \
+  : \
+    "${INSTALL_NODE?}" \
+    "${NODE_MAJOR_VERSION?}" \
+    "${INSTALL_CST?}" \
+    "${CST_VERSION?}" \
+    "${INSTALL_HADOLINT?}" \
+    "${HADOLINT_VERSION?}" \
+    "${INSTALL_RUST?}" \
+    "${RUST_VERSION?}" \
+    "${RUST_PACKAGES?}" \
+    "${INSTALL_FLYCTL?}" && \
+  if compgen -G "/tmp/features/*.sh" > /dev/null; then \
+    for FILEPATH in /tmp/features/*.sh; do \
+      FILENAME=$(basename "$FILEPATH"); \
+      PART_NAME=$(echo "$FILENAME" | sed -E 's/^[0-9]+_//;s/\.sh$//' | tr '[:lower:]' '[:upper:]'); \
+      ENABLED_VAR="INSTALL_${PART_NAME}"; \
+      if [[ "${!ENABLED_VAR:-}" != "true" ]]; then \
+        echo "Skipping $FILENAME -> $PART_NAME (not enabled)"; \
+      else \
+        echo "Running ${PART_NAME} install ${FILENAME}"; \
+        bash "$FILEPATH"; \
+      fi; \
+    done; \
+  else \
+    echo "No feature scripts found in /tmp/features"; \
+  fi && \
+  rm -rf /var/lib/apt/lists/* /tmp/*
 
 ###############################################################################
 # Extra Packages Installation

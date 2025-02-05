@@ -7,7 +7,6 @@ fly.toml
 .env.local
 .env.production
 .env.development
-!.env-example
 
 # Ignore workspace and user-generated files
 workspace/
