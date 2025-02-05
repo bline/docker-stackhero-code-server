@@ -60,12 +60,12 @@ flyctl deploy      # Deploy to Fly.io
 To run locally, you need `docker` installed.
 
 ```bash
-export PASSWORD="code-server-password"
+export CODE_SERVER_PASSWORD="code-server-password"
 export GITHUB_TOKEN="github token"
 ./run_local.sh
 ```
 
-If you do not set `PASSWORD` or `GITHUB_TOKEN`, `run_local.sh` will prompt for them.
+If you do not set `CODE_SERVER_PASSWORD` or `GITHUB_TOKEN`, `run_local.sh` will prompt for them.
 
 ---
 
