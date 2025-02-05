@@ -53,6 +53,15 @@ USER_NAME = "coder"
 # USER_SHELL: Shell that the user will use (e.g., /bin/bash, /bin/zsh).
 USER_SHELL = "/bin/bash"
 
+# ENABLE_GIT_CONFIG: Enables running the `git config` command to setup git for committing code with the options below.
+ENABLE_GIT_CONFIG = "false"
+
+# GIT_USER: Global Git username (git config --global user.name).
+GIT_USER = "Your Name"
+
+# GIT_EMAIL: Global Git email (git config --global user.email).
+GIT_EMAIL = "you@domain.com"
+
 # INSTALL_NODE: Install a specific major version of Node.js from NodeSource.
 # - true  → Installs the specified Node.js version (see NODE_MAJOR_VERSION below).
 # - false → Skips Node.js installation (note: code-server includes its own Node.js runtime).
@@ -110,26 +119,6 @@ RUST_PACKAGES = "bat fd dust https://github.com/bvaisvil/zenith.git"
 [env]
 # TZ: The timezone you want your container to use.
 TZ = "America/New_York"
-
-# DEFAULT_WORKSPACE: Matches the above build arg for your working directory.
-DEFAULT_WORKSPACE = "/workspace"
-
-# PORT: The port code-server uses inside the container. Fly will map it externally.
-PORT = "8080"
-
-# HOME: The default home directory for the user. Often matches the workspace.
-HOME = "/workspace"
-
-# GIT_USER: Global Git username (git config --global user.name).
-#   Uncomment and set to your name.
-# GIT_USER = "Your Name"
-
-# GIT_EMAIL: Global Git email (git config --global user.email).
-#   Uncomment and set to your email.
-# GIT_EMAIL = "you@domain.com"
-
-# USER_NAME: Same user as above to keep container internals consistent.
-USER_NAME = "coder"
 
 # ----------------------------------------------------------------
 # HTTP Service and Auto-Stop Configuration
