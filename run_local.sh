@@ -19,32 +19,52 @@ echo
 
 # save a copy of output in color for tmux, save a copy without color for debugging
 # and still output to the user
-exec > >(tee >(tee "$OUTPUT_LOG_COLOR" >/dev/null) >(sed 's/\x1b\[[0-9;]*m//g' >> "$OUTPUT_LOG"))
+exec > >(tee >(tee "$OUTPUT_LOG_COLOR" >/dev/null) >(sed 's/\x1b\[[0-9;]*m//g' >>"$OUTPUT_LOG"))
 
 non_interactive=false
 no_tmux=false
 
 while getopts ":tn-:" opt; do
   case "${opt}" in
-    n) non_interactive=true; shift ;;
-    t) no_tmux=true; shift ;;
+    n)
+      non_interactive=true
+      shift
+      ;;
+    t)
+      no_tmux=true
+      shift
+      ;;
     -)
       case "${OPTARG}" in
-        non-interactive) non_interactive=true; shift ;;
-        no-tmux) no_tmux=true; shift ;;
-        *) echo "Invalid option: --${OPTARG}" >&2; exit 1 ;;
+        non-interactive)
+          non_interactive=true
+          shift
+          ;;
+        no-tmux)
+          no_tmux=true
+          shift
+          ;;
+        *)
+          echo "Invalid option: --${OPTARG}" >&2
+          exit 1
+          ;;
       esac
       ;;
-    *) echo "Usage: $0 [-n|--non-interactive][-t|--no-tmux]" >&2; exit 1 ;;
+    *)
+      echo "Usage: $0 [-n|--non-interactive][-t|--no-tmux]" >&2
+      exit 1
+      ;;
   esac
 done
+# Get the first argument as the fly.toml file, defaulting to "fly.toml"
+FLY_TOML="${1:-fly.toml}"
 
 if [ "$non_interactive" = true ]; then
-    log_status "Running in non-interactive mode"
+  log_status "Running in non-interactive mode"
 fi
 
-
-prompt() {
+prompt()
+{
   local prompt="${1:-Hit enter to continue, ctrl+c to stop}"
   local post_prompt="${2:-"$(color_green "continuing")"}"
   if [ "$non_interactive" = false ]; then
@@ -56,23 +76,25 @@ prompt() {
 }
 
 CAT="cat"
-type -P batcat &> /dev/null
+type -P batcat &>/dev/null
 if [ $? -eq 0 ]; then
   CAT="batcat --paging=never --style=plain -f --language bash"
 fi
 
-add_docker_env() {
+add_docker_env()
+{
   local key="$1"
   local value="$2"
   log_status "Adding '$key' to docker env"
-  if [[ -f "$ENV_FILE" ]] then
-    echo "$key=$value" >> "$ENV_FILE"
+  if [[ -f $ENV_FILE ]]; then
+    echo "$key=$value" >>"$ENV_FILE"
   else
-    echo "$key=$value" > "$ENV_FILE"
+    echo "$key=$value" >"$ENV_FILE"
   fi
 }
 
-cmd_tmux() {
+cmd_tmux()
+{
   if [ "$no_tmux" = false ]; then
     log_status "Run command: $(echo "$*" | $CAT)"
     prompt "Hit enter to run this command or Ctrl+c to exit" "$(color_green "running!")"
@@ -84,15 +106,19 @@ cmd_tmux() {
   fi
 }
 
-cmd() {
+cmd()
+{
   log_status "Run command $(echo "$*" | $CAT)"
   prompt "Hit enter to run this command or Ctrl+c to exit" "$(color_green "running!")"
-  local out_log="$(pwd)/fly-code-server_${1}-${2}-$(date +%Y%m%d_%H%M%S).log"
-  if ! $* 2>&1 | tee >(sed -E 's/\x1B\[[0-9;]*[mK]//g' >> "$out_log"); then
+  local out_log
+  out_log="$(pwd)/fly-code-server_${1}-${2}-$(date +%Y%m%d_%H%M%S).log"
+  if ! "$@" 2>&1 | tee >(sed -E 's/\x1B\[[0-9;]*[mK]//g' >>"$out_log"); then
     log_error "$(color_yellow "$1 $2") command failed. See log file $(color_cyan "$out_log")"
+    return 1
   else
     rm -f "$out_log"
   fi
+  return 0
 }
 
 log_head "Checking environment"
@@ -109,50 +135,42 @@ fi
 ###############################################################################
 # Securely Capture Password Input
 ###############################################################################
-if [[ -z "${CODE_SERVER_PASSWORD:-}" ]]; then
+if [[ -z ${CODE_SERVER_PASSWORD:-} ]]; then
   CODE_SERVER_PASSWORD="$(read_password 'code-server login password: ')"
 fi
-if [[ -z "${GITHUB_TOKEN:-}" ]]; then
+if [[ -z ${GITHUB_TOKEN:-} ]]; then
   GITHUB_TOKEN="$(read_password 'Github Token: ')"
 fi
 
 # Create a temporary environment file to store the password securely
 ENV_FILE=$(mktemp)
-chmod 600 "$ENV_FILE"  # Restrict file permissions
-
+chmod 600 "$ENV_FILE" # Restrict file permissions
 
 # Ensure cleanup runs on script exit (including Ctrl+C)
-cleanup() {
+cleanup()
+{
   echo
   log_status "Cleanup: Removing temp files"
   rm -f "$ENV_FILE"
   rm -f "$OUTPUT_LOG_COLOR"
 }
-trap cleanup EXIT  # Triggers cleanup even if the script is interrupted
+trap cleanup EXIT # Triggers cleanup even if the script is interrupted
 
 ###############################################################################
 # Load Configuration from fly.toml
 ###############################################################################
 
-# Get the first argument as the fly.toml file, defaulting to "fly.toml"
-FLY_TOML="${1:-fly.toml}"
-
-# Always build a fresh copy
-if ! ./build.sh "$FLY_TOML" >/dev/null 2>&1; then
-  log_error "Failed to build $FLY_TOML"
-fi
-if [[ ! -f "$FLY_TOML" ]]; then
+if [[ ! -f $FLY_TOML ]]; then
   log_error "File '$FLY_TOML' not found!"
   exit 1
 fi
 
 log_head "Parsing fly.toml: $FLY_TOML"
 
-
 # Extract key configuration values
 APP_NAME=$(extract_toml_value "app")
 log_status "extracted app='$APP_NAME'"
-if [[ -z "$APP_NAME" ]]; then
+if [[ -z $APP_NAME ]]; then
   log_error "app setting in $FLY_TOML is required"
   exit 1
 fi
@@ -178,9 +196,9 @@ log_status "Using Dockerfile: $DOCKERFILE"
 declare -A BUILD_ARGS
 extract_toml_section "build.args" BUILD_ARGS
 
-DOCKER_BUILD_ARGS=""
+DOCKER_BUILD_ARGS=()
 for key in "${!BUILD_ARGS[@]}"; do
-  DOCKER_BUILD_ARGS+=" --build-arg ${key}=${BUILD_ARGS[$key]}"
+  DOCKER_BUILD_ARGS+=("--build-arg" "${key}=${BUILD_ARGS[$key]}")
 done
 
 log_status "Build args: ${!BUILD_ARGS[*]}"
@@ -198,7 +216,9 @@ else
 fi
 
 # Run Docker build
-cmd_tmux $BUILD_CMD -t "$IMAGE_NAME" -f "$DOCKERFILE" $DOCKER_BUILD_ARGS .
+if ! cmd_tmux $BUILD_CMD -t "$IMAGE_NAME" -f "$DOCKERFILE" "${DOCKER_BUILD_ARGS[@]}" .; then
+  exit 1
+fi
 
 log_status "Build complete."
 
@@ -211,12 +231,10 @@ log_head "Running the container"
 declare -A ENV_VARS
 extract_toml_section "env" ENV_VARS
 
-
-
-if [[ -n "$CODE_SERVER_PASSWORD" ]]; then
+if [[ -n $CODE_SERVER_PASSWORD ]]; then
   add_docker_env "PASSWORD" "$CODE_SERVER_PASSWORD"
 fi
-if [[ -n "$GITHUB_TOKEN" ]]; then
+if [[ -n $GITHUB_TOKEN ]]; then
   add_docker_env "GITHUB_TOKEN", "$GITHUB_TOKEN"
 fi
 add_docker_env "FLY_APP_NAME" "$APP_NAME"
@@ -224,7 +242,6 @@ add_docker_env "FLY_APP_NAME" "$APP_NAME"
 for key in "${!ENV_VARS[@]}"; do
   add_docker_env "$key" "${ENV_VARS[$key]}"
 done
-
 
 log_status "Environment variables: ${!ENV_VARS[*]}"
 log_status "Exposing port: $INTERNAL_PORT"
