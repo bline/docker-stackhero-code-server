@@ -2,7 +2,10 @@
 set -euo pipefail # Enable strict mode
 
 # Exit early if Rust installation is not enabled
-[[ ${INSTALL_RUST:-false} == "true" ]] || exit 0
+if [[ ${INSTALL_RUST:-false} != "true" ]]; then
+  echo "**** Skipping Rust install ****"
+  exit 0
+fi
 
 # Default installation directory
 RUST_INSTALL_PREFIX="/opt/rust"

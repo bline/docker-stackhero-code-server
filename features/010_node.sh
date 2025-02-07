@@ -2,7 +2,10 @@
 set -euo pipefail # Enable strict mode
 
 # Exit early if Node.js installation is not enabled
-[[ ${INSTALL_NODE:-false} == "true" ]] || exit 0
+if [[ ${INSTALL_NODE:-false} != "true" ]]; then
+  echo "**** Skipping Node.js install ****"
+  exit 0
+fi
 
 echo "**** Installing Node.js ${NODE_MAJOR_VERSION} from NodeSource ****"
 

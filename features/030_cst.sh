@@ -2,7 +2,10 @@
 set -euo pipefail # Enable strict mode
 
 # Exit early if CST installation is not enabled
-[[ ${INSTALL_CST:-false} == "true" ]] || exit 0
+if [[ ${INSTALL_CST:-false} != "true" ]]; then
+  echo "**** Skipping Container Structure Test install ****"
+  exit 0
+fi
 
 echo "**** Installing Container Structure Test (CST) ****"
 curl -Lo /usr/local/bin/container-structure-test \

@@ -82,21 +82,9 @@ RUN apt-get update && \
     "${RUST_VERSION?}" \
     "${RUST_PACKAGES?}" \
     "${INSTALL_FLYCTL?}" && \
-  if compgen -G "/tmp/features/*.sh" > /dev/null; then \
-    for FILEPATH in /tmp/features/*.sh; do \
-      FILENAME=$(basename "$FILEPATH"); \
-      PART_NAME=$(echo "$FILENAME" | sed -E 's/^[0-9]+_//;s/\.sh$//' | tr '[:lower:]' '[:upper:]'); \
-      ENABLED_VAR="INSTALL_${PART_NAME}"; \
-      if [[ "${!ENABLED_VAR:-}" != "true" ]]; then \
-        echo "Skipping $FILENAME -> $PART_NAME (not enabled)"; \
-      else \
-        echo "Running ${PART_NAME} install ${FILENAME}"; \
-        bash "$FILEPATH"; \
-      fi; \
-    done; \
-  else \
-    echo "No feature scripts found in /tmp/features"; \
-  fi && \
+  for FILEPATH in /tmp/features/*.sh; do \
+    bash "$FILEPATH"; \
+  done && \
   rm -rf /var/lib/apt/lists/* /tmp/*
 
 ###############################################################################

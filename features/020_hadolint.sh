@@ -2,7 +2,10 @@
 set -euo pipefail # Enable strict mode
 
 # Exit early if Hadolint installation is not enabled
-[[ ${INSTALL_HADOLINT:-false} == "true" ]] || exit 0
+if [[ ${INSTALL_HADOLINT:-false} != "true" ]]; then
+  echo "**** Skipping Hadolint install ****"
+  exit 0
+fi
 
 echo "**** Installing Hadolint (Version: ${HADOLINT_VERSION}) ****"
 
