@@ -5,3 +5,7 @@ bash-completion
 tree
 html2text
 vim
+binutils
+zip
+unzip
+upx-ucl/bookworm-backports

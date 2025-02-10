@@ -90,6 +90,7 @@ RUN apt-get update && \
 ###############################################################################
 # Extra Packages Installation
 ###############################################################################
+COPY backports.list /etc/apt/sources.list.d/backports.list
 COPY packages.list /config/packages.list
 RUN echo "**** Installing extra packages ****" && \
     apt-get update && \

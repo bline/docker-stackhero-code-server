@@ -1,5 +1,6 @@
 # generated file
 fly.toml
+/*.conf
 
 # Ignore Docker-related files that shouldn't be versioned
 *.env
